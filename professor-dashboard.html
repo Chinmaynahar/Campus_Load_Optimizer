@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor Dashboard - Cognitive Load Management</title>
+    <link rel="shortcut icon" href="./images/logo.png">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .course-selector {
+            background: var(--color-white);
+            padding: 1.5rem;
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .course-selector select {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--color-light);
+            border-radius: var(--border-radius-1);
+            background: var(--color-background);
+            color: var(--color-dark);
+            font-size: 1rem;
+        }
+        
+        .deadline-form {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--color-dark);
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--color-light);
+            border-radius: var(--border-radius-1);
+            background: var(--color-background);
+            color: var(--color-dark);
+        }
+        
+        .difficulty-selector {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .difficulty-star {
+            font-size: 1.5rem;
+            color: var(--color-light);
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+        
+        .difficulty-star.active {
+            color: var(--color-warning);
+        }
+        
+        .difficulty-star:hover {
+            color: var(--color-warning);
+        }
+        
+        .load-graph {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .graph-container {
+            height: 300px;
+            position: relative;
+            margin: 2rem 0;
+            border-left: 2px solid var(--color-info);
+            border-bottom: 2px solid var(--color-info);
+        }
+        
+        .graph-bars {
+            display: flex;
+            height: 100%;
+            align-items: end;
+            justify-content: space-around;
+            padding: 1rem 0;
+        }
+        
+        .graph-bar {
+            width: 40px;
+            background: linear-gradient(to top, var(--color-primary), var(--color-success));
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .graph-bar:hover {
+            opacity: 0.8;
+        }
+        
+        .graph-bar.danger {
+            background: linear-gradient(to top, var(--color-danger), #ff9999);
+        }
+        
+        .graph-bar.warning {
+            background: linear-gradient(to top, var(--color-warning), #ffcc99);
+        }
+        
+        .bar-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: var(--color-info);
+        }
+        
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--color-dark);
+        }
+        
+        .class-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--color-white);
+            padding: 1.5rem;
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-number.safe { color: var(--color-success); }
+        .stat-number.moderate { color: var(--color-warning); }
+        .stat-number.danger { color: var(--color-danger); }
+        
+        .conflict-panel {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .conflict-alert {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 1rem;
+            border-radius: var(--border-radius-1);
+            margin-bottom: 1rem;
+        }
+        
+        .conflict-alert.critical {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .ai-suggestions {
+            background: linear-gradient(135deg, var(--color-primary), #8b94f7);
+            color: white;
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            margin-bottom: 2rem;
+        }
+        
+        .suggestion-option {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius-1);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .suggestion-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .suggestion-option:last-child {
+            margin-bottom: 0;
+        }
+        
+        .suggestion-benefits {
+            list-style: none;
+            margin-top: 0.5rem;
+        }
+        
+        .suggestion-benefits li {
+            padding: 0.2rem 0;
+            padding-left: 1rem;
+            position: relative;
+        }
+        
+        .suggestion-benefits li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4caf50;
+        }
+        
+        .deadlines-table {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--color-light);
+        }
+        
+        .table th {
+            background: var(--color-light);
+            font-weight: 600;
+            color: var(--color-dark);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--border-radius-1);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--color-danger);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: var(--color-warning);
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.8;
+        }
+        
+        .students-at-risk {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-top: 2rem;
+        }
+        
+        .risk-student {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-left: 4px solid var(--color-danger);
+            background: var(--color-light);
+            border-radius: var(--border-radius-1);
+            margin-bottom: 1rem;
+        }
+        
+        .risk-student:last-child {
+            margin-bottom: 0;
+        }
+        
+        .student-info h4 {
+            color: var(--color-dark);
+            margin-bottom: 0.3rem;
+        }
+        
+        .risk-reason {
+            font-size: 0.8rem;
+            color: var(--color-info);
+        }
+        
+        .risk-score {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-danger);
+        }
+        
+        .department-coordination {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .dept-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .dept-stat-card {
+            background: var(--color-light);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-1);
+            text-align: center;
+        }
+        
+        .dept-stat-card h4 {
+            color: var(--color-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .dept-workload {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .dept-workload span {
+            background: var(--color-white);
+            padding: 0.5rem;
+            border-radius: var(--border-radius-1);
+            font-size: 0.9rem;
+        }
+        
+        .overload-summary {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 1.5rem;
+            border-radius: var(--border-radius-1);
+            margin-top: 2rem;
+        }
+        
+        .overload-day {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: white;
+            border-radius: var(--border-radius-1);
+        }
+        
+        .overload-suggestion {
+            margin-top: 0.5rem;
+            color: var(--color-primary);
+            font-style: italic;
+        }
+        
+        .enhanced-deadline-management {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .analytics-card {
+            background: var(--color-light);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-1);
+        }
+        
+        .analytics-card h4 {
+            color: var(--color-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .impact-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            background: var(--color-white);
+            border-radius: var(--border-radius-1);
+            margin-bottom: 0.5rem;
+        }
+        
+        .impact-value {
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+        
+        .scheduling-suggestion {
+            background: var(--color-white);
+            padding: 1rem;
+            border-radius: var(--border-radius-1);
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--color-success);
+        }
+        
+        .suggestion-benefit {
+            color: var(--color-success);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .pattern-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            background: var(--color-white);
+            border-radius: var(--border-radius-1);
+            margin-bottom: 0.5rem;
+        }
+        
+        .pattern-trend {
+            font-size: 0.8rem;
+            color: var(--color-info);
+        }
+        
+        .risk-analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--color-light);
+            border-radius: var(--border-radius-1);
+        }
+        
+        .risk-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        
+        .risk-stat {
+            text-align: center;
+        }
+        
+        .risk-stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-danger);
+        }
+        
+        .risk-stat-label {
+            font-size: 0.8rem;
+            color: var(--color-info);
+        }
+        
+        .enhanced-suggestion-option {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-1);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .enhanced-suggestion-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .suggestion-impact {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .suggestion-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .suggestion-metric {
+            text-align: center;
+        }
+        
+        .suggestion-metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        
+        .suggestion-metric-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .apply-suggestion-btn {
+            background: var(--color-success);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius-1);
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .apply-suggestion-btn:hover {
+            background: #2e7d32;
+        }
+        
+        .enhanced-risk-student {
+            display: block;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--color-light);
+            border-radius: var(--border-radius-1);
+        }
+        
+        .student-details {
+            margin: 0.5rem 0;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .student-details small {
+            color: var(--color-info);
+        }
+        
+        .risk-factors {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--color-light);
+            border-radius: var(--border-radius-1);
+        }
+        
+        .risk-factors ul {
+            margin: 0.5rem 0 0 1rem;
+            list-style-type: disc;
+        }
+        
+        .risk-factors li {
+            margin: 0.3rem 0;
+            color: var(--color-dark-varient);
+        }
+        
+        .student-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .risk-score-container {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .risk-level {
+            font-size: 0.8rem;
+            color: var(--color-danger);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-top: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo" title="Cognitive Load Management System">
+            <img src="./images/logo.png" alt="">
+            <h2>C<span class="danger">L</span>MS</h2>
+        </div>
+        <div class="navbar">
+            <a href="professor-dashboard.html" class="active">
+                <span class="material-icons-sharp">dashboard</span>
+                <h3>Dashboard</h3>
+            </a>
+            <a href="#" onclick="showDeadlineForm()">
+                <span class="material-icons-sharp">add_circle</span>
+                <h3>Add Deadline</h3>
+            </a>
+            <a href="#" onclick="logout()">
+                <span class="material-icons-sharp">logout</span>
+                <h3>Logout</h3>
+            </a>
+        </div>
+        <div id="profile-btn">
+            <span class="material-icons-sharp">person</span>
+        </div>
+        <div class="theme-toggler">
+            <span class="material-icons-sharp active">light_mode</span>
+            <span class="material-icons-sharp">dark_mode</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside>
+            <div class="profile">
+                <div class="top">
+                    <div class="profile-photo">
+                        <img src="./images/profile-2.jpeg" alt="">
+                    </div>
+                    <div class="info">
+                        <p>Welcome, <b id="professorName">Loading...</b></p>
+                        <small class="text-muted">Professor</small>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main>
+            <h1>Professor Dashboard</h1>
+            
+            <!-- Course Selection -->
+            <div class="course-selector">
+                <h2>Select Course</h2>
+                <select id="courseSelect" onchange="loadCourseData()">
+                    <option value="">Choose a course...</option>
+                </select>
+            </div>
+
+            <!-- Course Statistics -->
+            <div class="class-stats" id="classStats" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-number safe" id="safeStudents">0</div>
+                    <p>Students Safe</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number moderate" id="moderateStudents">0</div>
+                    <p>Moderate Load</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number danger" id="riskStudents">0</div>
+                    <p>High Risk</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalStudents">0</div>
+                    <p>Total Students</p>
+                </div>
+            </div>
+
+            <!-- Weekly Load Graph -->
+            <div class="load-graph" id="loadGraph" style="display: none;">
+                <h2>📊 Weekly Class Load Overview</h2>
+                <p class="text-muted">Average cognitive load across all students in selected course</p>
+                <div class="graph-container">
+                    <div class="graph-bars" id="graphBars">
+                        <!-- Graph bars will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conflict Detection -->
+            <div class="conflict-panel" id="conflictPanel" style="display: none;">
+                <h2>⚠️ Conflict Detection</h2>
+                <div id="conflictAlerts">
+                    <!-- Conflict alerts will be populated here -->
+                </div>
+            </div>
+
+            <!-- AI Suggestions -->
+            <div class="ai-suggestions" id="aiSuggestions" style="display: none;">
+                <h2>
+                    <span class="material-icons-sharp">psychology</span>
+                    AI Scheduling Assistant
+                </h2>
+                <div id="suggestionsList">
+                    <!-- AI suggestions will be populated here -->
+                </div>
+            </div>
+
+            <!-- Add/Manage Deadlines -->
+            <div class="deadline-form" id="deadlineForm" style="display: none;">
+                <h2>Create New Deadline</h2>
+                <form id="createDeadlineForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="deadlineTitle">Title</label>
+                            <input type="text" id="deadlineTitle" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="deadlineType">Type</label>
+                            <select id="deadlineType" required>
+                                <option value="assignment">Assignment</option>
+                                <option value="exam">Exam</option>
+                                <option value="project">Project</option>
+                                <option value="quiz">Quiz</option>
+                                <option value="presentation">Presentation</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="deadlineDate">Due Date</label>
+                            <input type="date" id="deadlineDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="deadlineWeightage">Weightage (%)</label>
+                            <input type="number" id="deadlineWeightage" min="1" max="100" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Difficulty Level</label>
+                            <div class="difficulty-selector">
+                                <span class="difficulty-star" data-value="1">★</span>
+                                <span class="difficulty-star" data-value="2">★</span>
+                                <span class="difficulty-star" data-value="3">★</span>
+                                <span class="difficulty-star" data-value="4">★</span>
+                                <span class="difficulty-star" data-value="5">★</span>
+                                <span style="margin-left: 1rem; color: var(--color-info);" id="difficultyLabel">Select difficulty</span>
+                            </div>
+                            <input type="hidden" id="deadlineDifficulty" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="estimatedHours">Estimated Hours</label>
+                            <input type="number" id="estimatedHours" min="1" max="50" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Create Deadline</button>
+                    <button type="button" class="btn" onclick="hideDeadlineForm()">Cancel</button>
+                </form>
+            </div>
+
+            <!-- Existing Deadlines -->
+            <div class="deadlines-table" id="deadlinesTable" style="display: none;">
+                <h2>Existing Deadlines</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Due Date</th>
+                            <th>Difficulty</th>
+                            <th>Weight</th>
+                            <th>Students Affected</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deadlinesTableBody">
+                        <!-- Deadlines will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Department-wide Coordination -->
+            <div class="department-coordination" id="departmentCoordination" style="display: none;">
+                <h2>📢 Department-wide Calendar</h2>
+                <p class="text-muted">Coordinate with other professors to prevent system-wide overload</p>
+                
+                <div class="dept-calendar-overview">
+                    <div class="dept-stats-grid">
+                        <div class="dept-stat-card">
+                            <h4>Computer Science</h4>
+                            <div class="dept-workload">
+                                <span>3 major exams</span>
+                                <span>5 projects</span>
+                                <span>2 assignments</span>
+                            </div>
+                        </div>
+                        <div class="dept-stat-card">
+                            <h4>Mathematics</h4>
+                            <div class="dept-workload">
+                                <span>2 exams</span>
+                                <span>3 assignments</span>
+                                <span>1 project</span>
+                            </div>
+                        </div>
+                        <div class="dept-stat-card">
+                            <h4>Physics</h4>
+                            <div class="dept-workload">
+                                <span>1 exam</span>
+                                <span>4 lab reports</span>
+                                <span>2 assignments</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overload-summary">
+                        <h3>Most Overloaded Days This Week:</h3>
+                        <div class="overload-day">
+                            <strong>Thursday, Jan 18</strong> - Critical overload detected
+                            <div class="overload-suggestion">
+                                💡 Suggestion: Spread deadlines to Jan 16, 19, and 21
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Deadline Management -->
+            <div class="enhanced-deadline-management" id="enhancedDeadlineManagement" style="display: none;">
+                <h2>📋 Advanced Deadline Management</h2>
+                
+                <div class="deadline-analytics">
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <h4>Impact Analysis</h4>
+                            <div id="impactAnalysis">
+                                <!-- Impact analysis will be populated here -->
+                            </div>
+                        </div>
+                        <div class="analytics-card">
+                            <h4>Optimal Scheduling</h4>
+                            <div id="optimalScheduling">
+                                <!-- Optimal scheduling suggestions will be populated here -->
+                            </div>
+                        </div>
+                        <div class="analytics-card">
+                            <h4>Historical Patterns</h4>
+                            <div id="historicalPatterns">
+                                <!-- Historical patterns will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="students-at-risk" id="studentsAtRisk" style="display: none;">
+                <h2>🚨 Students at High Risk</h2>
+                <div id="riskStudentsList">
+                    <!-- Risk students will be populated here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="professor-dashboard.js"></script>
+</body>
+</html>

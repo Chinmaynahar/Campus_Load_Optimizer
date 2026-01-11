@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Cognitive Load Management</title>
+    <link rel="shortcut icon" href="./images/logo.png">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .cognitive-load-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .calendar-day {
+            background: var(--color-white);
+            padding: 1rem;
+            border-radius: var(--border-radius-1);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .calendar-day:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .calendar-day.green {
+            background: #e8f5e8;
+            border-color: var(--color-success);
+        }
+        
+        .calendar-day.yellow {
+            background: #fff8e1;
+            border-color: var(--color-warning);
+        }
+        
+        .calendar-day.orange {
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+        
+        .calendar-day.red {
+            background: #ffebee;
+            border-color: var(--color-danger);
+        }
+        
+        .day-date {
+            font-weight: 600;
+            color: var(--color-dark);
+            margin-bottom: 0.5rem;
+        }
+        
+        .day-name {
+            font-size: 0.8rem;
+            color: var(--color-info);
+            margin-bottom: 0.5rem;
+        }
+        
+        .load-score {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        
+        .load-indicator {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .ai-tips {
+            background: linear-gradient(135deg, var(--color-primary), #8b94f7);
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--card-border-radius);
+            margin: 1rem 0;
+        }
+        
+        .ai-tips h3 {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .ai-tips .material-icons-sharp {
+            margin-right: 0.5rem;
+        }
+        
+        .ai-recommendation {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius-1);
+            margin-bottom: 1rem;
+        }
+        
+        .ai-recommendation:last-child {
+            margin-bottom: 0;
+        }
+        
+        .recommendation-type {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .recommendation-suggestions {
+            list-style: none;
+            margin-top: 0.5rem;
+        }
+        
+        .recommendation-suggestions li {
+            padding: 0.3rem 0;
+            padding-left: 1rem;
+            position: relative;
+        }
+        
+        .recommendation-suggestions li:before {
+            content: '→';
+            position: absolute;
+            left: 0;
+        }
+        
+        .upcoming-deadlines {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .deadline-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-left: 4px solid var(--color-primary);
+            background: var(--color-light);
+            border-radius: var(--border-radius-1);
+            margin-bottom: 1rem;
+        }
+        
+        .deadline-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .deadline-icon {
+            margin-right: 1rem;
+            color: var(--color-primary);
+        }
+        
+        .deadline-info h4 {
+            color: var(--color-dark);
+            margin-bottom: 0.3rem;
+        }
+        
+        .deadline-meta {
+            font-size: 0.8rem;
+            color: var(--color-info);
+        }
+        
+        .difficulty-stars {
+            color: var(--color-warning);
+            margin-left: 0.5rem;
+        }
+        
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .notification-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--color-danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .card {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .timeline-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+        
+        .timeline-day {
+            margin-bottom: 2rem;
+            border-left: 3px solid var(--color-light);
+            padding-left: 1rem;
+        }
+        
+        .timeline-date {
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .timeline-items {
+            margin-left: 1rem;
+        }
+        
+        .timeline-item {
+            background: var(--color-light);
+            padding: 1rem;
+            border-radius: var(--border-radius-1);
+            margin-bottom: 0.8rem;
+            border-left: 4px solid var(--color-primary);
+        }
+        
+        .timeline-item.high-priority {
+            border-left-color: var(--color-danger);
+            background: #ffebee;
+        }
+        
+        .timeline-item.medium-priority {
+            border-left-color: var(--color-warning);
+            background: #fff8e1;
+        }
+        
+        .timeline-item.personal {
+            border-left-color: var(--color-success);
+            background: #e8f5e8;
+        }
+        
+        .timeline-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .timeline-item-title {
+            font-weight: 600;
+            color: var(--color-dark);
+        }
+        
+        .timeline-item-type {
+            background: var(--color-primary);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+        
+        .timeline-item-meta {
+            font-size: 0.8rem;
+            color: var(--color-info);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .free-day {
+            text-align: center;
+            color: var(--color-success);
+            font-style: italic;
+            padding: 1rem;
+            background: #e8f5e8;
+            border-radius: var(--border-radius-1);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--color-light);
+            border-radius: var(--border-radius-1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--color-info);
+        }
+        
+        .progress-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            background: var(--color-light);
+            border-radius: var(--border-radius-1);
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-bar {
+            width: 100px;
+            height: 8px;
+            background: var(--color-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--color-success);
+            transition: width 0.3s ease;
+        }
+        
+        .load-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 0.8rem;
+            border-radius: var(--border-radius-1);
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .load-warning.critical {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .enhanced-notification-bell {
+            position: relative;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .enhanced-notification-bell:hover {
+            background: var(--color-light);
+        }
+        
+        .notification-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 300px;
+            max-height: 400px;
+            background: var(--color-white);
+            border-radius: var(--border-radius-1);
+            box-shadow: var(--box-shadow);
+            z-index: 1000;
+            display: none;
+            overflow-y: auto;
+        }
+        
+        .notification-dropdown.active {
+            display: block;
+        }
+        
+        .notification-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--color-light);
+            font-weight: 600;
+            color: var(--color-dark);
+        }
+        
+        .notification-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--color-light);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .notification-item:hover {
+            background: var(--color-light);
+        }
+        
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            color: var(--color-dark);
+            margin-bottom: 0.3rem;
+        }
+        
+        .notification-message {
+            font-size: 0.9rem;
+            color: var(--color-info);
+            margin-bottom: 0.3rem;
+        }
+        
+        .notification-time {
+            font-size: 0.7rem;
+            color: var(--color-info);
+        }
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--color-white);
+            padding: 2rem;
+            border-radius: var(--card-border-radius);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .close-modal {
+            cursor: pointer;
+            color: var(--color-info);
+        }
+        
+        .add-event-form {
+            background: var(--color-light);
+            padding: 1rem;
+            border-radius: var(--border-radius-1);
+            margin-top: 1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--color-dark);
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--color-light);
+            border-radius: var(--border-radius-1);
+            background: var(--color-white);
+            color: var(--color-dark);
+        }
+        
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius-1);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary:hover {
+            background: #6370d8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo" title="Cognitive Load Management System">
+            <img src="./images/logo.png" alt="">
+            <h2>C<span class="danger">L</span>MS</h2>
+        </div>
+        <div class="navbar">
+            <a href="student-dashboard.html" class="active">
+                <span class="material-icons-sharp">dashboard</span>
+                <h3>Dashboard</h3>
+            </a>
+            <a href="timetable.html">
+                <span class="material-icons-sharp">today</span>
+                <h3>Schedule</h3>
+            </a>
+            <a href="#" onclick="showAddEventModal()">
+                <span class="material-icons-sharp">add_circle</span>
+                <h3>Add Event</h3>
+            </a>
+            <a href="#" onclick="logout()">
+                <span class="material-icons-sharp">logout</span>
+                <h3>Logout</h3>
+            </a>
+        </div>
+        <div class="enhanced-notification-bell" id="notificationBell">
+            <span class="material-icons-sharp">notifications</span>
+            <div class="notification-count" id="notificationCount">0</div>
+            <div class="notification-dropdown" id="notificationDropdown">
+                <div class="notification-header">Notifications</div>
+                <div id="notificationList">
+                    <!-- Notifications will be populated here -->
+                </div>
+            </div>
+        </div>
+        <div id="profile-btn">
+            <span class="material-icons-sharp">person</span>
+        </div>
+        <div class="theme-toggler">
+            <span class="material-icons-sharp active">light_mode</span>
+            <span class="material-icons-sharp">dark_mode</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside>
+            <div class="profile">
+                <div class="top">
+                    <div class="profile-photo">
+                        <img src="./images/profile-1.jpg" alt="">
+                    </div>
+                    <div class="info">
+                        <p>Hey, <b id="studentName">Loading...</b></p>
+                        <small class="text-muted" id="studentId">Loading...</small>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main>
+            <h1>Cognitive Load Dashboard</h1>
+            
+            <!-- Calendar View -->
+            <div class="insights">
+                <div class="card">
+                    <h2>📅 14-Day Load Calendar</h2>
+                    <p class="text-muted">Color-coded stress levels for upcoming days</p>
+                    <div class="cognitive-load-calendar" id="loadCalendar">
+                        <!-- Calendar will be populated by JavaScript -->
+                    </div>
+                    <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--color-info);">
+                        <span style="color: #4caf50;">🟢 Safe (0-40)</span> |
+                        <span style="color: #ff9800;">🟡 Moderate (41-60)</span> |
+                        <span style="color: #ff5722;">🟠 High (61-80)</span> |
+                        <span style="color: #f44336;">🔴 Critical (81-100)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Tips Panel -->
+            <div class="ai-tips" id="aiTips">
+                <h3>
+                    <span class="material-icons-sharp">psychology</span>
+                    AI Assistant Recommendations
+                </h3>
+                <div id="aiRecommendations">
+                    <!-- AI recommendations will be populated here -->
+                </div>
+            </div>
+
+            <!-- Upcoming Deadlines Timeline -->
+            <div class="upcoming-deadlines">
+                <h2>📋 Upcoming Deadlines Timeline</h2>
+                <div class="timeline-container">
+                    <div id="upcomingDeadlinesList">
+                        <!-- Timeline will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Dashboard Sections -->
+            <div class="dashboard-grid">
+                <!-- Today's Schedule -->
+                <div class="today-schedule card">
+                    <h3>📅 Today's Schedule</h3>
+                    <div id="todaySchedule">
+                        <!-- Today's items will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="quick-stats card">
+                    <h3>📊 Quick Stats</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number" id="totalDeadlines">0</div>
+                            <div class="stat-label">Upcoming Deadlines</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="avgLoad">0</div>
+                            <div class="stat-label">Avg Load This Week</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="freeDays">0</div>
+                            <div class="stat-label">Free Days Ahead</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Study Progress -->
+                <div class="study-progress card">
+                    <h3>📈 Study Progress</h3>
+                    <div id="studyProgress">
+                        <!-- Progress tracking will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Day Details Modal -->
+    <div class="day-details-modal" id="dayDetailsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalDate">Day Details</h2>
+                <span class="material-icons-sharp close-modal" onclick="closeDayModal()">close</span>
+            </div>
+            <div id="modalContent">
+                <!-- Day details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div class="day-details-modal" id="addEventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Personal Event</h2>
+                <span class="material-icons-sharp close-modal" onclick="closeAddEventModal()">close</span>
+            </div>
+            <form class="add-event-form" id="addEventForm">
+                <div class="form-group">
+                    <label for="eventTitle">Event Title</label>
+                    <input type="text" id="eventTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventDate">Date</label>
+                    <input type="date" id="eventDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventHours">Estimated Hours</label>
+                    <input type="number" id="eventHours" min="1" max="12" required>
+                </div>
+                <div class="form-group">
+                    <label for="eventType">Event Type</label>
+                    <select id="eventType" required>
+                        <option value="study">Study Session</option>
+                        <option value="meeting">Meeting</option>
+                        <option value="project">Personal Project</option>
+                        <option value="activity">Club Activity</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Add Event</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="student-dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognitive Load Management System - Login</title>
+    <link rel="shortcut icon" href="./images/logo.png">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: var(--color-background);
+        }
+        
+        .login-card {
+            background: var(--color-white);
+            padding: 3rem;
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .login-header {
+            margin-bottom: 2rem;
+        }
+        
+        .login-header h1 {
+            color: var(--color-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-header p {
+            color: var(--color-info);
+            font-size: 0.9rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--color-dark);
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--color-light);
+            border-radius: var(--border-radius-1);
+            font-size: 1rem;
+            background: var(--color-background);
+            color: var(--color-dark);
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-1);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .login-btn:hover {
+            background: #6370d8;
+        }
+        
+        .login-btn:disabled {
+            background: var(--color-info);
+            cursor: not-allowed;
+        }
+        
+        .demo-accounts {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--color-light);
+            border-radius: var(--border-radius-1);
+            text-align: left;
+        }
+        
+        .demo-accounts h3 {
+            color: var(--color-dark);
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .demo-account {
+            margin-bottom: 0.8rem;
+            font-size: 0.8rem;
+            color: var(--color-dark-varient);
+        }
+        
+        .demo-account strong {
+            color: var(--color-dark);
+        }
+        
+        .error-message {
+            color: var(--color-danger);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            display: none;
+            margin-top: 1rem;
+        }
+        
+        .theme-toggler {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: var(--color-white);
+            border-radius: 50%;
+            padding: 1rem;
+            box-shadow: var(--box-shadow);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-toggler">
+        <span class="material-icons-sharp active">light_mode</span>
+        <span class="material-icons-sharp">dark_mode</span>
+    </div>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Welcome Back</h1>
+                <p>Cognitive Load Management System</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="login-btn" id="loginBtn">
+                    Sign In
+                </button>
+                
+                <div class="loading" id="loading">
+                    <p>Signing in...</p>
+                </div>
+                
+                <div class="error-message" id="errorMessage"></div>
+            </form>
+            
+            <div class="demo-accounts">
+                <h3>Demo Accounts:</h3>
+                <div class="demo-account">
+                    <strong>Student:</strong> student@university.edu / password
+                </div>
+                <div class="demo-account">
+                    <strong>Professor:</strong> prof@university.edu / password
+                </div>
+                <div class="demo-account">
+                    <strong>Admin:</strong> admin@university.edu / password
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Theme toggle functionality
+        const themeToggler = document.querySelector('.theme-toggler');
+        const applySavedTheme = () => {
+            const isDarkMode = localStorage.getItem('dark-theme') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark-theme');
+                themeToggler.querySelector('span:nth-child(1)').classList.remove('active');
+                themeToggler.querySelector('span:nth-child(2)').classList.add('active');
+            } else {
+                document.body.classList.remove('dark-theme');
+                themeToggler.querySelector('span:nth-child(1)').classList.add('active');
+                themeToggler.querySelector('span:nth-child(2)').classList.remove('active');
+            }
+        };
+        
+        themeToggler.onclick = function() {
+            document.body.classList.toggle('dark-theme');
+            const isDarkMode = document.body.classList.contains('dark-theme');
+            localStorage.setItem('dark-theme', isDarkMode);
+            applySavedTheme();
+        };
+        
+        applySavedTheme();
+        
+        // Login functionality
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const loading = document.getElementById('loading');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            loading.style.display = 'block';
+            errorMessage.textContent = '';
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store user data
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    
+                    // Redirect based on role
+                    switch (data.user.role) {
+                        case 'student':
+                            window.location.href = 'student-dashboard.html';
+                            break;
+                        case 'professor':
+                            window.location.href = 'professor-dashboard.html';
+                            break;
+                        case 'admin':
+                            window.location.href = 'admin-dashboard.html';
+                            break;
+                        default:
+                            window.location.href = 'index.html';
+                    }
+                } else {
+                    errorMessage.textContent = data.message || 'Login failed. Please try again.';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.textContent = 'Network error. Please check your connection and try again.';
+            } finally {
+                loginBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+        
+        // Auto-fill demo accounts on click
+        document.querySelectorAll('.demo-account').forEach(account => {
+            account.style.cursor = 'pointer';
+            account.addEventListener('click', () => {
+                const text = account.textContent;
+                if (text.includes('student@university.edu')) {
+                    document.getElementById('email').value = 'student@university.edu';
+                    document.getElementById('password').value = 'password';
+                } else if (text.includes('prof@university.edu')) {
+                    document.getElementById('email').value = 'prof@university.edu';
+                    document.getElementById('password').value = 'password';
+                } else if (text.includes('admin@university.edu')) {
+                    document.getElementById('email').value = 'admin@university.edu';
+                    document.getElementById('password').value = 'password';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Cognitive Load Management</title>
+    <link rel="shortcut icon" href="./images/logo.png">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .overview-card {
+            background: var(--color-white);
+            padding: 2rem;
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+        
+        .overview-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .overview-number.students { color: var(--color-primary); }
+        .overview-number.professors { color: var(--color-success); }
+        .overview-number.courses { color: var(--color-warning); }
+        .overview-number.critical { color: var(--color-danger); }
+        
+        .department-comparison {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .dept-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .dept-card {
+            background: var(--color-light);
+            padding: 1.5rem;
+            border-radius: var(--border-radius-1);
+            text-align: center;
+        }
+        
+        .dept-name {
+            font-weight: 600;
+            color: var(--color-dark);
+            margin-bottom: 1rem;
+        }
+        
+        .dept-metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .system-config {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .config-section {
+            margin-bottom: 2rem;
+        }
+        
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: var(--color-light);
+            border-radius: var(--border-radius-1);
+            margin-bottom: 1rem;
+        }
+        
+        .config-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .config-label {
+            font-weight: 500;
+            color: var(--color-dark);
+        }
+        
+        .config-control {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .config-input {
+            padding: 0.5rem;
+            border: 1px solid var(--color-light);
+            border-radius: var(--border-radius-1);
+            background: var(--color-white);
+            color: var(--color-dark);
+            width: 80px;
+        }
+        
+        .threshold-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-left: 0.5rem;
+        }
+        
+        .threshold-indicator.safe { background: var(--color-success); }
+        .threshold-indicator.moderate { background: var(--color-warning); }
+        .threshold-indicator.high { background: #ff5722; }
+        .threshold-indicator.critical { background: var(--color-danger); }
+        
+        .professor-activity {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .activity-table th,
+        .activity-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--color-light);
+        }
+        
+        .activity-table th {
+            background: var(--color-light);
+            font-weight: 600;
+            color: var(--color-dark);
+        }
+        
+        .conflict-indicator {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .conflict-indicator.low {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .conflict-indicator.medium {
+            background: #fff8e1;
+            color: #f57c00;
+        }
+        
+        .conflict-indicator.high {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .system-alerts {
+            background: var(--color-white);
+            padding: var(--card-padding);
+            border-radius: var(--card-border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-left: 4px solid var(--color-danger);
+            background: var(--color-light);
+            border-radius: var(--border-radius-1);
+            margin-bottom: 1rem;
+        }
+        
+        .alert-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .alert-item.warning {
+            border-left-color: var(--color-warning);
+        }
+        
+        .alert-item.info {
+            border-left-color: var(--color-primary);
+        }
+        
+        .alert-icon {
+            margin-right: 1rem;
+            color: var(--color-danger);
+        }
+        
+        .alert-item.warning .alert-icon {
+            color: var(--color-warning);
+        }
+        
+        .alert-item.info .alert-icon {
+            color: var(--color-primary);
+        }
+        
+        .alert-content h4 {
+            color: var(--color-dark);
+            margin-bottom: 0.3rem;
+        }
+        
+        .alert-meta {
+            font-size: 0.8rem;
+            color: var(--color-info);
+        }
+        
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius-1);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+        
+        .btn-success {
+            background: var(--color-success);
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.8;
+        }
+        
+        .formula-display {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: var(--border-radius-1);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--color-dark);
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo" title="Cognitive Load Management System">
+            <img src="./images/logo.png" alt="">
+            <h2>C<span class="danger">L</span>MS</h2>
+        </div>
+        <div class="navbar">
+            <a href="admin-dashboard.html" class="active">
+                <span class="material-icons-sharp">dashboard</span>
+                <h3>Dashboard</h3>
+            </a>
+            <a href="#" onclick="showSystemConfig()">
+                <span class="material-icons-sharp">settings</span>
+                <h3>System Config</h3>
+            </a>
+            <a href="#" onclick="logout()">
+                <span class="material-icons-sharp">logout</span>
+                <h3>Logout</h3>
+            </a>
+        </div>
+        <div id="profile-btn">
+            <span class="material-icons-sharp">person</span>
+        </div>
+        <div class="theme-toggler">
+            <span class="material-icons-sharp active">light_mode</span>
+            <span class="material-icons-sharp">dark_mode</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside>
+            <div class="profile">
+                <div class="top">
+                    <div class="profile-photo">
+                        <img src="./images/profile-3.jpg" alt="">
+                    </div>
+                    <div class="info">
+                        <p>Welcome, <b id="adminName">Admin</b></p>
+                        <small class="text-muted">System Administrator</small>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main>
+            <h1>System Administration Dashboard</h1>
+            
+            <!-- System Overview -->
+            <div class="admin-overview">
+                <div class="overview-card">
+                    <div class="overview-number students" id="totalStudents">0</div>
+                    <h3>Total Students</h3>
+                    <p class="text-muted">Active in system</p>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-number professors" id="totalProfessors">0</div>
+                    <h3>Professors</h3>
+                    <p class="text-muted">Teaching courses</p>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-number courses" id="totalCourses">0</div>
+                    <h3>Active Courses</h3>
+                    <p class="text-muted">This semester</p>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-number critical" id="criticalAlerts">0</div>
+                    <h3>Critical Alerts</h3>
+                    <p class="text-muted">Require attention</p>
+                </div>
+            </div>
+
+            <!-- Department Comparison -->
+            <div class="department-comparison">
+                <h2>📊 Department Stress Comparison</h2>
+                <p class="text-muted">Average cognitive load across different departments</p>
+                <div class="dept-stats">
+                    <div class="dept-card">
+                        <div class="dept-name">Computer Science</div>
+                        <div class="dept-metric">
+                            <span>Avg Load:</span>
+                            <span><strong>67</strong></span>
+                        </div>
+                        <div class="dept-metric">
+                            <span>Students at Risk:</span>
+                            <span><strong>23%</strong></span>
+                        </div>
+                        <div class="dept-metric">
+                            <span>Active Courses:</span>
+                            <span><strong>12</strong></span>
+                        </div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Mathematics</div>
+                        <div class="dept-metric">
+                            <span>Avg Load:</span>
+                            <span><strong>54</strong></span>
+                        </div>
+                        <div class="dept-metric">
+                            <span>Students at Risk:</span>
+                            <span><strong>15%</strong></span>
+                        </div>
+                        <div class="dept-metric">
+                            <span>Active Courses:</span>
+                            <span><strong>8</strong></span>
+                        </div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Physics</div>
+                        <div class="dept-metric">
+                            <span>Avg Load:</span>
+                            <span><strong>71</strong></span>
+                        </div>
+                        <div class="dept-metric">
+                            <span>Students at Risk:</span>
+                            <span><strong>28%</strong></span>
+                        </div>
+                        <div class="dept-metric">
+                            <span>Active Courses:</span>
+                            <span><strong>6</strong></span>
+                        </div>
+                    </div>
+                    <div class="dept-card">
+                        <div class="dept-name">Chemistry</div>
+                        <div class="dept-metric">
+                            <span>Avg Load:</span>
+                            <span><strong>49</strong></span>
+                        </div>
+                        <div class="dept-metric">
+                            <span>Students at Risk:</span>
+                            <span><strong>12%</strong></span>
+                        </div>
+                        <div class="dept-metric">
+                            <span>Active Courses:</span>
+                            <span><strong>7</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Configuration -->
+            <div class="system-config" id="systemConfig">
+                <h2>⚙️ System Configuration</h2>
+                
+                <div class="config-section">
+                    <h3>Load Calculation Thresholds</h3>
+                    <div class="config-item">
+                        <div class="config-label">
+                            Safe Zone (Green)
+                            <div class="threshold-indicator safe"></div>
+                        </div>
+                        <div class="config-control">
+                            <span>0 -</span>
+                            <input type="number" class="config-input" value="40" id="safeThreshold">
+                        </div>
+                    </div>
+                    <div class="config-item">
+                        <div class="config-label">
+                            Moderate Zone (Yellow)
+                            <div class="threshold-indicator moderate"></div>
+                        </div>
+                        <div class="config-control">
+                            <input type="number" class="config-input" value="41" readonly> -
+                            <input type="number" class="config-input" value="60" id="moderateThreshold">
+                        </div>
+                    </div>
+                    <div class="config-item">
+                        <div class="config-label">
+                            High Stress (Orange)
+                            <div class="threshold-indicator high"></div>
+                        </div>
+                        <div class="config-control">
+                            <input type="number" class="config-input" value="61" readonly> -
+                            <input type="number" class="config-input" value="80" id="highThreshold">
+                        </div>
+                    </div>
+                    <div class="config-item">
+                        <div class="config-label">
+                            Critical Zone (Red)
+                            <div class="threshold-indicator critical"></div>
+                        </div>
+                        <div class="config-control">
+                            <span>81 - 100</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3>Load Calculation Formula Weights</h3>
+                    <div class="config-item">
+                        <div class="config-label">Difficulty Multiplier</div>
+                        <div class="config-control">
+                            <input type="number" class="config-input" value="10" id="difficultyWeight">
+                            <span>× difficulty level</span>
+                        </div>
+                    </div>
+                    <div class="config-item">
+                        <div class="config-label">Weightage Divisor</div>
+                        <div class="config-control">
+                            <span>grade weight ÷</span>
+                            <input type="number" class="config-input" value="2" id="weightageDiv">
+                        </div>
+                    </div>
+                    <div class="config-item">
+                        <div class="config-label">Hours Multiplier</div>
+                        <div class="config-control">
+                            <input type="number" class="config-input" value="2" id="hoursWeight">
+                            <span>× estimated hours</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="formula-display">
+                    <strong>Current Formula:</strong><br>
+                    Load = (Difficulty × <span id="diffDisplay">10</span>) + (Weightage ÷ <span id="weightDisplay">2</span>) + (Hours × <span id="hoursDisplay">2</span>) + Proximity Bonus
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button class="btn btn-primary" onclick="saveConfiguration()">Save Configuration</button>
+                    <button class="btn" onclick="resetToDefaults()">Reset to Defaults</button>
+                </div>
+            </div>
+
+            <!-- Professor Activity Monitor -->
+            <div class="professor-activity">
+                <h2>👨‍🏫 Professor Activity Monitor</h2>
+                <p class="text-muted">Professors creating the most scheduling conflicts</p>
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>Professor</th>
+                            <th>Department</th>
+                            <th>Active Courses</th>
+                            <th>Deadlines This Week</th>
+                            <th>Conflict Level</th>
+                            <th>Students Affected</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Dr. Smith</td>
+                            <td>Computer Science</td>
+                            <td>3</td>
+                            <td>7</td>
+                            <td><span class="conflict-indicator high">High</span></td>
+                            <td>135</td>
+                        </tr>
+                        <tr>
+                            <td>Prof. Johnson</td>
+                            <td>Mathematics</td>
+                            <td>2</td>
+                            <td>3</td>
+                            <td><span class="conflict-indicator medium">Medium</span></td>
+                            <td>78</td>
+                        </tr>
+                        <tr>
+                            <td>Dr. Williams</td>
+                            <td>Physics</td>
+                            <td>2</td>
+                            <td>2</td>
+                            <td><span class="conflict-indicator low">Low</span></td>
+                            <td>45</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- System Alerts -->
+            <div class="system-alerts">
+                <h2>🚨 System Alerts</h2>
+                <div class="alert-item">
+                    <div class="alert-icon">
+                        <span class="material-icons-sharp">error</span>
+                    </div>
+                    <div class="alert-content">
+                        <h4>Critical Overload Detected</h4>
+                        <p>CS201 has 38 students in danger zone on Jan 18th</p>
+                        <div class="alert-meta">2 hours ago • Computer Science Department</div>
+                    </div>
+                </div>
+                <div class="alert-item warning">
+                    <div class="alert-icon">
+                        <span class="material-icons-sharp">warning</span>
+                    </div>
+                    <div class="alert-content">
+                        <h4>Multiple Deadline Conflicts</h4>
+                        <p>3 courses have overlapping major deadlines this week</p>
+                        <div class="alert-meta">5 hours ago • Cross-Department</div>
+                    </div>
+                </div>
+                <div class="alert-item info">
+                    <div class="alert-icon">
+                        <span class="material-icons-sharp">info</span>
+                    </div>
+                    <div class="alert-content">
+                        <h4>System Performance</h4>
+                        <p>Load calculation completed for 1,247 students in 0.3s</p>
+                        <div class="alert-meta">1 day ago • System Status</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="admin-dashboard.js"></script>
+</body>
+</html>
