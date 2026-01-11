@@ -80,29 +80,43 @@ function updateStudentInfo() {
     document.getElementById('studentId').textContent = `ID: ${dashboardData.student.studentId}`;
 }
 
-// Render cognitive load calendar
+// Render cognitive load calendar (compact version)
 function renderLoadCalendar() {
     const calendar = document.getElementById('loadCalendar');
     calendar.innerHTML = '';
     
-    dashboardData.loadData.forEach(day => {
+    // Show only next 7 days for compact view
+    const next7Days = dashboardData.loadData.slice(0, 7);
+    
+    next7Days.forEach(day => {
         const dayElement = document.createElement('div');
-        dayElement.className = `calendar-day ${day.color}`;
+        dayElement.className = `calendar-day-compact ${day.color}`;
         dayElement.onclick = () => showDayDetails(day.date);
         
         const date = new Date(day.date);
         const dayNumber = date.getDate();
-        const monthName = date.toLocaleDateString('en-US', { month: 'short' });
         
         dayElement.innerHTML = `
-            <div class="day-date">${dayNumber}</div>
-            <div class="day-name">${day.dayName.substring(0, 3)}</div>
-            <div class="load-score">${day.score}</div>
-            <div class="load-indicator">${getLoadLabel(day.score)}</div>
+            <div class="day-number">${dayNumber}</div>
+            <div class="load-score-compact">${day.score}</div>
         `;
         
         calendar.appendChild(dayElement);
     });
+    
+    // Update today's load badge
+    const todayData = dashboardData.loadData[0];
+    const todayBadge = document.getElementById('todayLoadBadge');
+    todayBadge.textContent = todayData.score;
+    todayBadge.className = 'load-badge';
+    
+    if (todayData.score >= 80) {
+        todayBadge.classList.add('high');
+    } else if (todayData.score >= 60) {
+        todayBadge.classList.add('medium');
+    } else {
+        todayBadge.classList.add('low');
+    }
 }
 
 // Get load label based on score
@@ -113,47 +127,43 @@ function getLoadLabel(score) {
     return 'Critical';
 }
 
-// Render AI recommendations
+// Render AI recommendations (compact version)
 function renderAIRecommendations() {
     const container = document.getElementById('aiRecommendations');
     
     if (!dashboardData.aiRecommendations || dashboardData.aiRecommendations.length === 0) {
         container.innerHTML = `
-            <div class="ai-recommendation">
-                <div class="recommendation-type">All Good!</div>
-                <p>Your workload looks manageable. Keep up the great work! 🎉</p>
+            <div class="ai-tip-compact">
+                <div class="ai-tip-title">All Good! 🎉</div>
+                <div class="ai-tip-text">Your workload looks manageable. Keep up the great work!</div>
             </div>
         `;
         return;
     }
     
     container.innerHTML = '';
-    dashboardData.aiRecommendations.forEach(rec => {
+    // Show only first 2 recommendations in compact view
+    const compactRecs = dashboardData.aiRecommendations.slice(0, 2);
+    
+    compactRecs.forEach(rec => {
         const recElement = document.createElement('div');
-        recElement.className = 'ai-recommendation';
-        
-        const typeClass = rec.type === 'critical' ? 'danger' : 'warning';
+        recElement.className = 'ai-tip-compact';
         
         recElement.innerHTML = `
-            <div class="recommendation-type ${typeClass}">${rec.type.toUpperCase()}</div>
-            <p>${rec.message}</p>
-            ${rec.suggestions ? `
-                <ul class="recommendation-suggestions">
-                    ${rec.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
-                </ul>
-            ` : ''}
+            <div class="ai-tip-title">${rec.type.toUpperCase()}: ${rec.title || 'Recommendation'}</div>
+            <div class="ai-tip-text">${rec.message}</div>
         `;
         
         container.appendChild(recElement);
     });
 }
 
-// Render upcoming deadlines with enhanced timeline
+// Render upcoming deadlines with compact timeline
 function renderUpcomingDeadlines() {
     const container = document.getElementById('upcomingDeadlinesList');
     
     if (!dashboardData.upcomingDeadlines || dashboardData.upcomingDeadlines.length === 0) {
-        container.innerHTML = '<div class="free-day">No upcoming deadlines. Enjoy your free time! 😊</div>';
+        container.innerHTML = '<div class="free-day-compact">No upcoming deadlines. Enjoy your free time! 😊</div>';
         return;
     }
     
@@ -162,18 +172,83 @@ function renderUpcomingDeadlines() {
     
     container.innerHTML = '';
     
-    // Generate timeline for next 14 days
+    // Generate compact timeline for next 7 days
     const today = new Date();
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 7; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() + i);
         const dateStr = date.toISOString().split('T')[0];
         
-        const dayElement = createTimelineDay(date, dateStr, deadlinesByDate[dateStr] || []);
-        container.appendChild(dayElement);
+        const dayElement = createCompactTimelineDay(date, dateStr, deadlinesByDate[dateStr] || []);
+        if (dayElement) {
+            container.appendChild(dayElement);
+        }
     }
     
     updateQuickStats();
+}
+
+// Create compact timeline day element
+function createCompactTimelineDay(date, dateStr, deadlines) {
+    if (deadlines.length === 0) return null;
+    
+    const dayElement = document.createElement('div');
+    dayElement.className = 'timeline-day-compact';
+    
+    const dayData = dashboardData.loadData.find(d => d.date === dateStr);
+    const loadScore = dayData ? dayData.score : 0;
+    
+    // Create date header
+    const dateHeader = document.createElement('div');
+    dateHeader.className = 'timeline-date-compact';
+    
+    const isToday = dateStr === new Date().toISOString().split('T')[0];
+    const dayName = isToday ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short' });
+    const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    
+    dateHeader.innerHTML = `
+        <span>${dayName} - ${dateDisplay}</span>
+        <span class="load-badge ${getLoadClass(loadScore)}">${loadScore}</span>
+    `;
+    
+    dayElement.appendChild(dateHeader);
+    
+    // Create items container
+    const itemsContainer = document.createElement('div');
+    itemsContainer.className = 'timeline-items-compact';
+    
+    deadlines.forEach(deadline => {
+        const itemElement = document.createElement('div');
+        itemElement.className = `timeline-item-compact ${getPriorityClass(deadline.difficulty)}`;
+        
+        itemElement.innerHTML = `
+            <div class="timeline-item-info">
+                <div class="timeline-item-title-compact">${deadline.title}</div>
+                <div class="timeline-item-meta-compact">
+                    ${deadline.courseId} • ${deadline.type} • ${deadline.difficulty}/5 difficulty
+                </div>
+            </div>
+        `;
+        
+        itemsContainer.appendChild(itemElement);
+    });
+    
+    dayElement.appendChild(itemsContainer);
+    return dayElement;
+}
+
+// Get load class for badge
+function getLoadClass(score) {
+    if (score >= 80) return 'high';
+    if (score >= 60) return 'medium';
+    return 'low';
+}
+
+// Get priority class based on difficulty
+function getPriorityClass(difficulty) {
+    if (difficulty >= 4) return 'high-priority';
+    if (difficulty >= 3) return 'medium-priority';
+    return '';
 }
 
 // Group deadlines by date
@@ -648,4 +723,138 @@ function showSuccess(message) {
 function logout() {
     localStorage.removeItem('currentUser');
     window.location.href = 'login.html';
+}
+
+// Render today's schedule (compact version)
+function renderTodaySchedule() {
+    const container = document.getElementById('todaySchedule');
+    const today = new Date().toISOString().split('T')[0];
+    
+    const todayDeadlines = dashboardData.upcomingDeadlines.filter(d => d.dueDate === today);
+    
+    if (todayDeadlines.length === 0) {
+        container.innerHTML = '<div class="free-day-compact">No deadlines today! 🎉</div>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    todayDeadlines.forEach(deadline => {
+        const itemElement = document.createElement('div');
+        itemElement.className = `today-item ${getPriorityClass(deadline.difficulty)}`;
+        
+        itemElement.innerHTML = `
+            <div class="today-item-info">
+                <div class="today-item-title">${deadline.title}</div>
+                <div class="today-item-meta">${deadline.courseId} • ${deadline.type}</div>
+            </div>
+        `;
+        
+        container.appendChild(itemElement);
+    });
+}
+
+// Render study progress (compact version)
+function renderStudyProgress() {
+    const container = document.getElementById('studyProgress');
+    
+    if (!dashboardData.studyProgress || dashboardData.studyProgress.length === 0) {
+        container.innerHTML = '<div class="free-day-compact">No progress data available</div>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    dashboardData.studyProgress.forEach(progress => {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'progress-item-compact';
+        
+        itemElement.innerHTML = `
+            <div class="progress-info">
+                <div class="progress-title">${progress.course}</div>
+                <div class="progress-meta">${progress.completed}/${progress.total} tasks</div>
+            </div>
+            <div class="progress-bar-compact">
+                <div class="progress-fill-compact" style="width: ${progress.percentage}%"></div>
+            </div>
+        `;
+        
+        container.appendChild(itemElement);
+    });
+}
+
+// Update quick stats
+function updateQuickStats() {
+    const totalDeadlines = dashboardData.upcomingDeadlines.length;
+    const avgLoad = Math.round(dashboardData.loadData.slice(0, 7).reduce((sum, day) => sum + day.score, 0) / 7);
+    const freeDays = dashboardData.loadData.slice(0, 7).filter(day => day.score <= 40).length;
+    
+    document.getElementById('totalDeadlines').textContent = totalDeadlines;
+    document.getElementById('avgLoad').textContent = avgLoad;
+    document.getElementById('freeDays').textContent = freeDays;
+}
+
+// Toggle AI expand
+function toggleAIExpand() {
+    const content = document.getElementById('aiRecommendations');
+    const btn = event.target.closest('.expand-btn');
+    
+    content.classList.toggle('expanded');
+    btn.classList.toggle('expanded');
+}
+
+// Toggle timeline expand
+function toggleTimelineExpand() {
+    const content = document.getElementById('upcomingDeadlinesList');
+    const btn = event.target.closest('.expand-btn');
+    
+    content.classList.toggle('expanded');
+    btn.classList.toggle('expanded');
+    
+    // If expanding, show more days
+    if (content.classList.contains('expanded')) {
+        renderExpandedTimeline();
+    } else {
+        renderUpcomingDeadlines(); // Back to compact view
+    }
+}
+
+// Render expanded timeline (14 days)
+function renderExpandedTimeline() {
+    const container = document.getElementById('upcomingDeadlinesList');
+    
+    if (!dashboardData.upcomingDeadlines || dashboardData.upcomingDeadlines.length === 0) {
+        container.innerHTML = '<div class="free-day-compact">No upcoming deadlines. Enjoy your free time! 😊</div>';
+        return;
+    }
+    
+    const deadlinesByDate = groupDeadlinesByDate(dashboardData.upcomingDeadlines);
+    container.innerHTML = '';
+    
+    // Generate timeline for next 14 days
+    const today = new Date();
+    for (let i = 0; i < 14; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const dayElement = createCompactTimelineDay(date, dateStr, deadlinesByDate[dateStr] || []);
+        if (dayElement || i < 7) { // Always show first 7 days, even if empty
+            if (!dayElement) {
+                // Create empty day element
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'timeline-day-compact';
+                const dayName = i === 0 ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short' });
+                const dateDisplay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                emptyDay.innerHTML = `
+                    <div class="timeline-date-compact">
+                        <span>${dayName} - ${dateDisplay}</span>
+                        <span class="load-badge low">Free</span>
+                    </div>
+                    <div class="free-day-compact" style="margin: 0.5rem 0;">No deadlines</div>
+                `;
+                container.appendChild(emptyDay);
+            } else {
+                container.appendChild(dayElement);
+            }
+        }
+    }
 }
