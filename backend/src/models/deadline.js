@@ -23,7 +23,7 @@ const deadlineSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["exam", "assignment", "project"],
+    enum: ["exam", "assignment", "project","quiz"],
     required: true
   }
 });

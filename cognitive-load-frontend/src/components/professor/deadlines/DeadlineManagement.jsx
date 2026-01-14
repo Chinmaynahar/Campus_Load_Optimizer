@@ -272,7 +272,7 @@ const DeadlineManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {deadline.type || 'Assignment'}
+                        {deadline.type || 'assignment'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -336,7 +336,7 @@ const DeadlineManagement = () => {
 const DeadlineModal = ({ title, deadline, onSubmit, onClose }) => {
   const [formData, setFormData] = useState({
     title: deadline?.title || '',
-    type: deadline?.type || 'Assignment',
+    type: deadline?.type || 'assignment',
     date: deadline?.deadline_date ? deadline.deadline_date.split('T')[0] : '',
     difficulty: deadline?.difficulty || 3,
     description: deadline?.description || ''
@@ -387,10 +387,10 @@ const DeadlineModal = ({ title, deadline, onSubmit, onClose }) => {
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              <option value="Assignment">Assignment</option>
-              <option value="Exam">Exam</option>
-              <option value="Project">Project</option>
-              <option value="Quiz">Quiz</option>
+              <option value="assignment">Assignment</option>
+              <option value="exam">Exam</option>
+              <option value="project">Project</option>
+              <option value="quiz">Quiz</option>
             </select>
           </div>
 
