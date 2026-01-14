@@ -1,10 +1,10 @@
 /backend/node_modules
 /backend/.env
 # Environment variables
-/frontend/.env
+/cognitive-load-frontend/.env
 
 # Node dependencies
-/frontend/node_modules
+/cognitive-load-frontend/node_modules
 
 # Logs
 npm-debug.log*

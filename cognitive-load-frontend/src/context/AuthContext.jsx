@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../apis/api'
 import { mockData } from '../services/mockData';
+import { supabase } from '../config/supabase';
 
 const AuthContext = createContext();
 
@@ -23,24 +24,30 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const { token } = api.getTokens();
+      const token = localStorage.getItem('token');
       if (token) {
-        // Verify with backend via API (encapsulates refresh logic)
-        const response = await api.getCurrentUser();
-        if (response.user) {
-          setUser(response.user);
-          setIsAuthenticated(true);
-        } else {
-          throw new Error('Invalid user data');
+        // Check if it's a demo token
+        if (token.startsWith('demo_token_')) {
+          const demoUser = localStorage.getItem('demo_user');
+          if (demoUser) {
+            const userData = JSON.parse(demoUser);
+            setUser(userData);
+            setIsAuthenticated(true);
+            return;
+          }
         }
-      } else {
-        setLoading(false);
+
+        // Regular token verification
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          setUser(JSON.parse(userData));
+          setIsAuthenticated(true);
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      api.clearAuth();
-      setUser(null);
-      setIsAuthenticated(false);
+      localStorage.removeItem('token');
+      localStorage.removeItem('demo_user');
     } finally {
       setLoading(false);
     }
@@ -48,6 +55,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      // Regular API login
       const response = await api.login(email, password);
       const { user: userData } = response;
       setUser(userData);
@@ -61,29 +69,23 @@ export const AuthProvider = ({ children }) => {
   const signup = async (email, password, name, role) => {
     try {
       const response = await api.signup(email, password, name, role);
-      // Backend might return token immediately or require email confirmation
-      if (response.token && response.user) {
-        setUser(response.user);
-        setIsAuthenticated(true);
-        return response.user;
-      }
-      return response; // Pass through mostly for email confirmation message
+      const { user: newUser } = response;
+      // Don't auto-login after signup, user needs to verify email
+      return newUser;
     } catch (error) {
       throw error;
     }
   };
 
-  const logout = async () => {
-    try {
-      await api.logout();
-    } catch (err) {
-      console.error('Logout error', err);
-    } finally {
-      setUser(null);
-      setIsAuthenticated(false);
-      api.clearAuth();
-    }
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('demo_user');
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user')
+    setUser(null);
+    setIsAuthenticated(false);
   };
+  
 
   const value = {
     user,
