@@ -6,6 +6,8 @@ const courseRoutes = require("./routes/course.routes");
 const deadlineRoutes = require("./routes/deadline.routes");
 const loadRoutes = require("./routes/load.routes");
 const aiRoutes = require("./routes/aiRoutes");
+const googleAuthRoutes = require("./routes/googleAuth.routes");
+const calendarRoutes = require("./routes/calendar.routes");
 
 const app = express();
 
@@ -17,6 +19,8 @@ app.use("/courses", courseRoutes);
 app.use("/deadlines", deadlineRoutes);
 app.use("/load", loadRoutes);
 app.use("/ai", aiRoutes);
+app.use("/api/google", googleAuthRoutes);
+app.use("/api/calendar", calendarRoutes);
 
 // Global 404 Handler (JSON)
 app.use((req, res) => {

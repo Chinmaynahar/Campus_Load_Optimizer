@@ -8,7 +8,7 @@ const deadlineSchema = new mongoose.Schema({
   },
   course_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Course", 
+    ref: "Course",
     required: true
   },
   deadline_date: {
@@ -23,7 +23,7 @@ const deadlineSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["exam", "assignment", "project"],
+    enum: ["exam", "assignment", "project", "quiz"],
     required: true
   }
 });

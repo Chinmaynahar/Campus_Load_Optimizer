@@ -1,13 +1,27 @@
 const Deadline = require("../models/deadline");
 const Course = require("../models/course");
 const ProfessorConflictService = require("../services/professorService");
+const deadlineSync = require("../services/deadlineSync");
 
 exports.createDeadline = async (req, res) => {
   try {
-    const deadline = await Deadline.create(req.body);
+    // Normalize the type to lowercase to handle any case variations
+    const deadlineData = {
+      ...req.body,
+      type: req.body.type?.toLowerCase()
+    };
+
+    const deadline = await Deadline.create(deadlineData);
+
+    // Analyze deadline impact (existing functionality)
     ProfessorConflictService
       .analyzeDeadlineImpact(deadline)
       .catch(err => console.error('Conflict analysis failed:', err));
+
+    // Sync to Google Calendar for enrolled students (new functionality)
+    deadlineSync
+      .syncDeadlineToGoogleCalendar(deadline)
+      .catch(err => console.error('Google Calendar sync failed:', err));
 
     res.status(201).json({
       success: true,

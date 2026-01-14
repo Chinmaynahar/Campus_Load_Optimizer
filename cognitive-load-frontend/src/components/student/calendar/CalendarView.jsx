@@ -1,35 +1,64 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle, Plus, RefreshCw, Link, Unlink } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { studentService } from '../../../services/studentService';
 import { loadCalculator } from '../../../utils/loadCalculator';
 import { dateUtils } from '../../../utils/dateUtils';
+import { googleCalendarService } from '../../../services/googleCalendarService';
+import toast from 'react-hot-toast';
 
 const CalendarView = () => {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarData, setCalendarData] = useState([]);
   const [assignments, setAssignments] = useState([]);
+  const [googleEvents, setGoogleEvents] = useState([]);
   const [selectedDay, setSelectedDay] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     loadCalendarData();
+    checkGoogleConnection();
   }, [currentDate, user]);
+
+  const checkGoogleConnection = async () => {
+    if (!user?.id) return;
+    try {
+      const connected = await googleCalendarService.checkConnectionStatus(user.id);
+      setIsGoogleConnected(connected);
+    } catch (error) {
+      console.error('Error checking Google Calendar connection:', error);
+    }
+  };
 
   const loadCalendarData = async () => {
     try {
       setLoading(true);
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
-      
+
       // Get assignments data
       const dashboardData = await studentService.getDashboardData();
       setAssignments(dashboardData.assignments || []);
-      
-      // Generate calendar data for the month
-      const monthData = generateMonthCalendar(year, month, dashboardData.assignments || []);
+
+      // Fetch Google Calendar events if connected
+      let gEvents = [];
+      if (isGoogleConnected && user?.id) {
+        try {
+          const startDate = new Date(year, month, 1);
+          const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+          gEvents = await googleCalendarService.getCalendarEvents(user.id, startDate, endDate);
+          setGoogleEvents(gEvents);
+        } catch (error) {
+          console.error('Error fetching Google Calendar events:', error);
+        }
+      }
+
+      // Generate calendar data for the month with both assignments and Google events
+      const monthData = generateMonthCalendar(year, month, dashboardData.assignments || [], gEvents);
       setCalendarData(monthData);
     } catch (error) {
       console.error('Error loading calendar data:', error);
@@ -53,35 +82,42 @@ const CalendarView = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const generateMonthCalendar = (year, month, assignments) => {
+  const generateMonthCalendar = (year, month, assignments, googleEvents = []) => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay()); // Start from Sunday
-    
+
     const calendar = [];
     const today = new Date();
-    
+
     for (let week = 0; week < 6; week++) {
       const weekDays = [];
       for (let day = 0; day < 7; day++) {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + (week * 7) + day);
-        
+
         const isCurrentMonth = currentDate.getMonth() === month;
         const isToday = currentDate.toDateString() === today.toDateString();
         const dateString = formatLocalDate(currentDate);
-        
+
         // Calculate cognitive load for this day
         const loadScore = loadCalculator.calculateDayLoad(assignments, [], currentDate);
-        
+
         // Get assignments due on this day - compare using local dates
         const dayAssignments = assignments.filter(a => {
           if (!a.deadline_date) return false;
           const assignmentDate = parseLocalDate(a.deadline_date);
           return assignmentDate && formatLocalDate(assignmentDate) === dateString;
         });
-        
+
+        // Get Google Calendar events for this day
+        const dayGoogleEvents = googleEvents.filter(event => {
+          if (!event.start) return false;
+          const eventDate = new Date(event.start.dateTime || event.start.date);
+          return formatLocalDate(eventDate) === dateString;
+        });
+
         weekDays.push({
           date: currentDate,
           dateString,
@@ -90,23 +126,24 @@ const CalendarView = () => {
           isToday,
           loadScore: loadScore.score,
           loadLevel: loadScore.level,
-          assignments: dayAssignments
+          assignments: dayAssignments,
+          googleEvents: dayGoogleEvents
         });
       }
       calendar.push(weekDays);
-      
+
       // Stop if we've covered the entire month and some of next month
       if (week > 3 && weekDays[0].date.getMonth() !== month) {
         break;
       }
     }
-    
+
     return calendar;
   };
 
   const getLoadColor = (level, isCurrentMonth) => {
     if (!isCurrentMonth) return 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600';
-    
+
     switch (level) {
       case 'critical': return 'bg-red-500 text-white hover:bg-red-600';
       case 'high': return 'bg-orange-500 text-white hover:bg-orange-600';
@@ -124,6 +161,59 @@ const CalendarView = () => {
 
   const goToToday = () => {
     setCurrentDate(new Date());
+  };
+
+  const handleConnectGoogle = async () => {
+    if (!user?.id) {
+      toast.error('Please log in to connect Google Calendar');
+      return;
+    }
+
+    try {
+      toast.loading('Opening Google Calendar authorization...');
+      await googleCalendarService.connectGoogleCalendar(user.id);
+      toast.dismiss();
+      toast.success('Google Calendar connected successfully!');
+      await checkGoogleConnection();
+      await loadCalendarData();
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Failed to connect Google Calendar');
+      console.error('Error connecting Google Calendar:', error);
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    if (!user?.id) return;
+
+    try {
+      await googleCalendarService.disconnectGoogleCalendar(user.id);
+      toast.success('Google Calendar disconnected');
+      setIsGoogleConnected(false);
+      setGoogleEvents([]);
+      await loadCalendarData();
+    } catch (error) {
+      toast.error('Failed to disconnect Google Calendar');
+      console.error('Error disconnecting Google Calendar:', error);
+    }
+  };
+
+  const handleSyncGoogle = async () => {
+    if (!user?.id || !isGoogleConnected) return;
+
+    try {
+      setSyncing(true);
+      toast.loading('Syncing Google Calendar...');
+      await loadCalendarData();
+      toast.dismiss();
+      toast.success('Calendar synced successfully!');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Failed to sync calendar');
+      console.error('Error syncing calendar:', error);
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const monthNames = [
@@ -158,22 +248,54 @@ const CalendarView = () => {
               Cognitive Load Calendar - Color-coded by stress level
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-2">
+            {/* Google Calendar Controls */}
+            {isGoogleConnected ? (
+              <>
+                <button
+                  onClick={handleSyncGoogle}
+                  disabled={syncing}
+                  className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                  title="Sync Google Calendar"
+                >
+                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Sync</span>
+                </button>
+                <button
+                  onClick={handleDisconnectGoogle}
+                  className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center space-x-2"
+                  title="Disconnect Google Calendar"
+                >
+                  <Unlink className="w-4 h-4" />
+                  <span className="hidden sm:inline">Disconnect</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleConnectGoogle}
+                className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
+                title="Connect Google Calendar"
+              >
+                <Link className="w-4 h-4" />
+                <span className="hidden sm:inline">Connect Google</span>
+              </button>
+            )}
+
             <button
               onClick={() => navigateMonth(-1)}
               className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            
+
             <button
               onClick={goToToday}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
               Today
             </button>
-            
+
             <button
               onClick={() => navigateMonth(1)}
               className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
@@ -238,9 +360,8 @@ const CalendarView = () => {
                 >
                   <div className="flex flex-col h-full">
                     <div className="flex justify-between items-start">
-                      <span className={`text-sm font-medium ${
-                        day.isCurrentMonth ? '' : 'opacity-50'
-                      }`}>
+                      <span className={`text-sm font-medium ${day.isCurrentMonth ? '' : 'opacity-50'
+                        }`}>
                         {day.day}
                       </span>
                       {day.loadScore > 0 && day.isCurrentMonth && (
@@ -249,21 +370,35 @@ const CalendarView = () => {
                         </span>
                       )}
                     </div>
-                    
-                    {/* Assignment indicators */}
+
+                    {/* Assignment and Event indicators */}
                     <div className="flex-1 flex flex-col justify-end">
-                      {day.assignments.slice(0, 2).map((assignment, index) => (
+                      {/* Assignments */}
+                      {day.assignments.slice(0, 1).map((assignment, index) => (
                         <div
                           key={assignment._id}
                           className="text-xs bg-black bg-opacity-20 rounded px-1 mb-1 truncate"
-                          title={assignment.title}
+                          title={`Assignment: ${assignment.title}`}
                         >
-                          {assignment.title}
+                          📚 {assignment.title}
                         </div>
                       ))}
-                      {day.assignments.length > 2 && (
+
+                      {/* Google Calendar Events */}
+                      {day.googleEvents && day.googleEvents.slice(0, 1).map((event, index) => (
+                        <div
+                          key={event.id}
+                          className="text-xs bg-blue-400 bg-opacity-30 rounded px-1 mb-1 truncate"
+                          title={`Event: ${event.summary}`}
+                        >
+                          📅 {event.summary}
+                        </div>
+                      ))}
+
+                      {/* Show total count if more items */}
+                      {(day.assignments.length + (day.googleEvents?.length || 0)) > 2 && (
                         <div className="text-xs bg-black bg-opacity-20 rounded px-1 text-center">
-                          +{day.assignments.length - 2} more
+                          +{(day.assignments.length + (day.googleEvents?.length || 0)) - 2} more
                         </div>
                       )}
                     </div>
@@ -292,11 +427,11 @@ const CalendarView = () => {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {selectedDay.date.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  {selectedDay.date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                   })}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -333,7 +468,7 @@ const CalendarView = () => {
                 <Calendar className="w-4 h-4 mr-2" />
                 Assignments Due ({selectedDay.assignments.length})
               </h4>
-              
+
               {selectedDay.assignments.length > 0 ? (
                 <div className="space-y-2">
                   {selectedDay.assignments.map((assignment) => (
@@ -341,13 +476,13 @@ const CalendarView = () => {
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <h5 className="font-medium text-gray-900 dark:text-white">
-                            {assignment.title}
+                            📚 {assignment.title}
                           </h5>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             {assignment.course_id?.name || 'Unknown Course'} • {assignment.type}
                           </p>
                           <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                            <span>Difficulty: {'●'.repeat(assignment.difficulty || 3)}{'○'.repeat(5-(assignment.difficulty || 3))}</span>
+                            <span>Difficulty: {'●'.repeat(assignment.difficulty || 3)}{'○'.repeat(5 - (assignment.difficulty || 3))}</span>
                           </div>
                         </div>
                       </div>
@@ -355,13 +490,57 @@ const CalendarView = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No assignments due on this day</p>
-                  <p className="text-sm mt-1">Perfect day to get ahead or take a break!</p>
+                <div className="text-center py-4 text-gray-500">
+                  <p className="text-sm">No assignments due on this day</p>
                 </div>
               )}
             </div>
+
+            {/* Google Calendar Events */}
+            {selectedDay.googleEvents && selectedDay.googleEvents.length > 0 && (
+              <div className="space-y-3 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h4 className="font-semibold text-gray-900 dark:text-white flex items-center">
+                  <Calendar className="w-4 h-4 mr-2 text-blue-500" />
+                  Google Calendar Events ({selectedDay.googleEvents.length})
+                </h4>
+
+                <div className="space-y-2">
+                  {selectedDay.googleEvents.map((event) => {
+                    const startTime = event.start?.dateTime || event.start?.date;
+                    const endTime = event.end?.dateTime || event.end?.date;
+                    const isAllDay = !event.start?.dateTime;
+
+                    return (
+                      <div key={event.id} className="p-3 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h5 className="font-medium text-gray-900 dark:text-white">
+                              📅 {event.summary || 'Untitled Event'}
+                            </h5>
+                            {event.description && (
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {event.description}
+                              </p>
+                            )}
+                            <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                              {isAllDay ? (
+                                <span>All Day</span>
+                              ) : (
+                                <span>
+                                  {new Date(startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                  {' - '}
+                                  {new Date(endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Load Breakdown */}
             {selectedDay.loadScore > 0 && (
