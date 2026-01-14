@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/shared/ProtectedRoute';
+import HomeRedirect from './components/shared/HomeRedirect';
 
 // Pages
 import Landing from './pages/Landing';
@@ -25,7 +26,7 @@ function App() {
           <div className="app">
             <Routes>
               {/* Public Routes */}
-              <Route path="/" element={<Landing />} />
+              <Route path="/" element={<HomeRedirect />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/auth/callback" element={<AuthCallback />} />

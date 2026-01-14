@@ -12,11 +12,11 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const from = location.state?.from?.pathname || '/';
 
   const handleSubmit = async (e) => {
@@ -26,12 +26,12 @@ const Login = () => {
     try {
       const user = await login(formData.email, formData.password);
       toast.success(`Welcome back, ${user.name}!`);
-      
+
       // Redirect based on user role
-      const redirectPath = user.role === 'student' ? '/student' : 
-                          user.role === 'professor' ? '/professor' : 
-                          user.role === 'admin' ? '/admin' : from;
-      
+      const redirectPath = user.role === 'student' ? '/student' :
+        user.role === 'professor' ? '/professor' :
+          user.role === 'admin' ? '/admin' : from;
+
       navigate(redirectPath, { replace: true });
     } catch (error) {
       toast.error(error.message || 'Login failed');
@@ -63,7 +63,7 @@ const Login = () => {
             </div>
             <span className="text-2xl font-bold text-gray-900 dark:text-white">CLMS</span>
           </Link>
-          
+
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Welcome Back
           </h1>
@@ -144,39 +144,7 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Demo Accounts */}
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
-            <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-3">🚀 Demo Accounts (Click to auto-fill):</p>
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setFormData({ email: 'student@demo.com', password: 'demo123' })}
-                className="w-full text-left p-2 bg-white dark:bg-gray-800 rounded border hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="text-xs">
-                  <strong className="text-green-600">👨‍🎓 Student:</strong> student@demo.com / demo123
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ email: 'professor@demo.com', password: 'demo123' })}
-                className="w-full text-left p-2 bg-white dark:bg-gray-800 rounded border hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="text-xs">
-                  <strong className="text-blue-600">👨‍🏫 Professor:</strong> professor@demo.com / demo123
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ email: 'admin@demo.com', password: 'demo123' })}
-                className="w-full text-left p-2 bg-white dark:bg-gray-800 rounded border hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="text-xs">
-                  <strong className="text-purple-600">👨‍💼 Admin:</strong> admin@demo.com / demo123
-                </div>
-              </button>
-            </div>
-          </div>
+
 
           {/* Footer */}
           <div className="mt-6 text-center">
